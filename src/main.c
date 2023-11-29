@@ -25,6 +25,13 @@ const struct zcan_filter message_filter = {
         .data = {1,2,3,4,5,6,7,8}
 };
 
+struct zcan_frame frame2 = {
+        .id_type = CAN_STANDARD_IDENTIFIER,
+        .rtr = CAN_DATAFRAME,
+        .id = 0x124,
+        .dlc = 8,
+        .data = {1,2,3,4,5,6,7,8}
+};
 void tx_irq_callback(uint32_t error_flags, void *arg)
 {
 	char *sender = (char *)arg;
@@ -53,12 +60,11 @@ gpio_pin_set(led.port,led.pin,1);
 can_send(can_dev, &frame, K_MSEC(1000), NULL, "Sender 1");
 }
 
-void CAN_send_two(void){
+void CAN_send_two_messages(void){
 
 gpio_pin_set(led.port,led.pin,1);
-can_send(can_dev, &frame, K_MSEC(1000), NULL, "Sender 1");
-can_send(can_dev, &frame, K_MSEC(1000), NULL, "Sender 1");
-
+can_send(can_dev, &frame,  K_MSEC(100), NULL, "Sender 1");
+can_send(can_dev, &frame2, K_MSEC(100), NULL, "Sender 2");
 }
 void main(void)
 {
@@ -67,7 +73,9 @@ void main(void)
     int filter_id;
 
     can_dev = device_get_binding("CAN_1");
-    can_status =  can_set_mode(can_dev, CAN_LOOPBACK_MODE);
+    // can_status =  can_set_mode(can_dev, CAN_LOOPBACK_MODE); loopback mode
+    can_status =  can_set_mode(can_dev, CAN_NORMAL_MODE);
+
     gpio_pin_configure_dt(&led,GPIO_OUTPUT_HIGH);
     
     filter_id = can_attach_isr(can_dev, rx_callback_function, NULL, &message_filter);
@@ -76,7 +84,7 @@ void main(void)
     }
 
     while(1){
-    CAN_send();
+    CAN_send_two_messages();
     k_msleep(1000);
 
     }
